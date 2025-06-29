@@ -43,6 +43,48 @@ func parseInputData(buffer []byte, input int) {
 	// fmt.Println(string(name))
 }
 
+func handleConnection(connection net.Conn) {
+    defer connection.Close()
+
+    for {
+        resp := NewResp(connection)
+        value, err := resp.Read()
+        if err != nil {
+            if err == io.EOF {
+                fmt.Println("Client disconnected, when closing connection")
+                break
+            }
+            fmt.Println("Error reading from client:", err.Error())
+            return
+        }
+
+        if value.typ != "array" {
+            fmt.Println("Invalid request, expected array")
+            continue
+        }
+
+        if len(value.array) == 0 {
+            fmt.Println("Invalid request, expected non-empty array")
+            continue
+        }
+
+        command := strings.ToUpper(value.array[0].bulk)
+        args := value.array[1:]
+
+        writer := NewWriter(connection)
+
+        handler, ok := Handlers[command]
+        if !ok {
+            fmt.Println("Unknown command:", command)
+            writer.Write(Value{typ: "string", str: ""})
+            continue
+        }
+        result := handler(args)
+        writer.Write(result)
+    }
+}
+
+
 func main() {
 
 	// Create a TCP listener on port 6379
@@ -58,53 +100,12 @@ func main() {
 
 	// Accept incoming connections
 	
-	connection, err := listener.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection:", err)
-		return
-	}
-
-	defer connection.Close()
-
-	// Read data from the connection
-
 	for {
-		resp := NewResp(connection)
-		value, err := resp.Read()
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("Client disconnected, when closing connection")
-				break
-			}
-			fmt.Println("Error reading from client:", err.Error())
-			os.Exit(1)
-		}
-
-		if value.typ != "array" {
-			fmt.Println("Invalid request, expected array")
-			continue
-		}
-
-		if len(value.array) == 0 {
-			fmt.Println("Invalid request, expected non-empty array")
-			continue
-		}
-
-		command := strings.ToUpper(value.array[0].bulk)
-		args := value.array[1:]
-
-		writer := NewWriter(connection)
-		
-		// Check if the command exists in the Handlers map
-		handler, ok := Handlers[command]
-		if !ok {
-			fmt.Println("Unknown command:", command)
-			writer.Write(Value{typ: "string", str: ""})
-			continue
-		}
-		result := handler(args)
-		writer.Write(result)
-	}
-
-	
+        connection, err := listener.Accept()
+        if err != nil {
+            fmt.Println("Error accepting connection:", err)
+            continue
+        }
+        go handleConnection(connection)
+    }	
 }
