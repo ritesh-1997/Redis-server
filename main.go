@@ -93,10 +93,9 @@ func main() {
 		command := strings.ToUpper(value.array[0].bulk)
 		args := value.array[1:]
 
-
-		// fmt.Println(value)
-		// _ = value
 		writer := NewWriter(connection)
+		
+		// Check if the command exists in the Handlers map
 		handler, ok := Handlers[command]
 		if !ok {
 			fmt.Println("Unknown command:", command)
@@ -105,27 +104,6 @@ func main() {
 		}
 		result := handler(args)
 		writer.Write(result)
-
-		// buffer := make([]byte, 1024)
-
-		// // Read data from the client
-		// input, err := connection.Read(buffer)
-		// if err != nil {
-		// 	if err == io.EOF {
-		// 		fmt.Println("Client disconnected, when closing connection")
-		// 		break;
-		// 	}
-		// 	fmt.Println("Error reading from client:", err.Error())
-		// 	os.Exit(1)
-		// }
-		// if input == 0 {
-		// 	fmt.Println("No data received, closing connection")
-		// 	break
-		// }
-		// parseInputData(buffer, input)
-		// fmt.Println("Received data:", string(buffer[:input]))
-		// for now ignore the request and just echo it back
-		// connection.Write([]byte("+PONG\r\n"))
 	}
 
 	
