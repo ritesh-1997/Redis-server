@@ -1,6 +1,6 @@
 # Redis-GO
 
-A minimal Redis-like server implemented in Go, supporting basic RESP protocol commands.
+A minimal Redis-like server implemented in Go, supporting basic RESP protocol commands and multiple connections.
 
 ## Features
 
